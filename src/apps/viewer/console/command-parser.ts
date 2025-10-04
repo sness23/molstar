@@ -87,13 +87,50 @@ export function parseColorCommand(input: string): ColorCommand {
     // Extract color spec and selection
     // Try to identify what's a color, what's a selection, what's a scheme
     const schemes = ['byelement', 'byatom', 'byhet', 'bychain', 'bynucleotide', 'bymodel', 'byidentity', 'bypolymer', 'random'];
+    const moleculeTypes = ['protein', 'nucleic', 'ligand', 'water'];
+    const secondaryStructure = ['helix', 'sheet', 'coil'];
 
-    for (const arg of parsed.args) {
+    // Combine selection parts that are separated by &
+    const combinedArgs: string[] = [];
+    let currentSelection = '';
+
+    for (let i = 0; i < parsed.args.length; i++) {
+        const arg = parsed.args[i];
+
+        // Check if this is part of a selection
+        if (isSelection(arg) || arg === '&' || moleculeTypes.includes(arg.toLowerCase()) || secondaryStructure.includes(arg.toLowerCase())) {
+            if (currentSelection) {
+                currentSelection += ' ' + arg;
+            } else {
+                currentSelection = arg;
+            }
+
+            // Look ahead to see if next token is also selection-related
+            const nextArg = i + 1 < parsed.args.length ? parsed.args[i + 1] : null;
+            if (!nextArg || (!isSelection(nextArg) && nextArg !== '&' && !moleculeTypes.includes(nextArg.toLowerCase()) && !secondaryStructure.includes(nextArg.toLowerCase()))) {
+                // End of selection
+                combinedArgs.push(currentSelection);
+                currentSelection = '';
+            }
+        } else {
+            if (currentSelection) {
+                combinedArgs.push(currentSelection);
+                currentSelection = '';
+            }
+            combinedArgs.push(arg);
+        }
+    }
+
+    if (currentSelection) {
+        combinedArgs.push(currentSelection);
+    }
+
+    for (const arg of combinedArgs) {
         if (schemes.includes(arg.toLowerCase())) {
             result.colorSpec = arg.toLowerCase();
         } else if (isColorName(arg) || isHexColor(arg)) {
             result.colorSpec = arg;
-        } else if (isSelection(arg)) {
+        } else if (isSelection(arg) || moleculeTypes.includes(arg.toLowerCase()) || secondaryStructure.includes(arg.toLowerCase())) {
             result.selection = arg;
         } else if (arg === 'rainbow' || arg === 'seq' || arg === 'sequential') {
             // Already handled in mode detection

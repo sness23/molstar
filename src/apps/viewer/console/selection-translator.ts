@@ -124,13 +124,13 @@ function parseResidueSpec(residueStr: string): ResidueSpec[] {
  */
 export function selectionToQuery(spec: SelectionSpec): StructureQuery {
     // Start with atomGroups if we have specific filters, otherwise use all()
-    const hasFilters = spec.chains || spec.residues || spec.secondaryStructure || spec.protein;
+    const hasFilters = spec.chains || spec.residues || spec.secondaryStructure || spec.protein || spec.nucleic || spec.ligand || spec.water;
 
     let query;
+    const atomGroupsParams: any = {};
 
     if (hasFilters) {
         // Build tests for atomGroups
-        const atomGroupsParams: any = {};
 
         // Apply chain filter
         if (spec.chains && spec.chains.length > 0) {
@@ -199,15 +199,58 @@ export function selectionToQuery(spec: SelectionSpec): StructureQuery {
         }
     }
 
-    // Apply protein filter
-    if (spec.protein) {
-        query = MS.struct.filter.pick({
-            '0': query,
-            test: MS.core.rel.eq([
-                MS.struct.atomProperty.macromolecular.entityType(),
-                'polymer'
-            ])
-        });
+    // Apply molecule type filters (protein, nucleic, ligand, water) to atomGroups params
+    if (hasFilters && (spec.protein || spec.nucleic || spec.ligand || spec.water)) {
+        const typeTests: any[] = [];
+
+        if (spec.protein) {
+            typeTests.push(
+                MS.core.logic.and([
+                    MS.core.rel.eq([MS.struct.atomProperty.macromolecular.entityType(), 'polymer']),
+                    MS.core.str.match([
+                        MS.core.type.regex(['(polypeptide|cyclic-pseudo-peptide|peptide-like)'], 'i'),
+                        MS.struct.atomProperty.macromolecular.entitySubtype()
+                    ])
+                ])
+            );
+        }
+
+        if (spec.nucleic) {
+            typeTests.push(
+                MS.core.logic.and([
+                    MS.core.rel.eq([MS.struct.atomProperty.macromolecular.entityType(), 'polymer']),
+                    MS.core.str.match([
+                        MS.core.type.regex(['(nucleotide|peptide nucleic acid)'], 'i'),
+                        MS.struct.atomProperty.macromolecular.entitySubtype()
+                    ])
+                ])
+            );
+        }
+
+        if (spec.ligand) {
+            typeTests.push(
+                MS.core.rel.eq([MS.struct.atomProperty.macromolecular.entityType(), 'non-polymer'])
+            );
+        }
+
+        if (spec.water) {
+            typeTests.push(
+                MS.core.rel.eq([MS.struct.atomProperty.macromolecular.entityType(), 'water'])
+            );
+        }
+
+        if (typeTests.length > 0) {
+            const typeTest = typeTests.length === 1 ? typeTests[0] : MS.core.logic.or(typeTests);
+
+            // If we already have atomGroups params, we need to rebuild the query
+            if (Object.keys(atomGroupsParams).length > 0) {
+                atomGroupsParams['entity-test'] = typeTest;
+                query = MS.struct.generator.atomGroups(atomGroupsParams);
+            } else {
+                // Just filter with entity-test
+                query = MS.struct.generator.atomGroups({ 'entity-test': typeTest });
+            }
+        }
     }
 
     return compile<StructureSelection>(query);
@@ -241,6 +284,18 @@ export function describeSelection(spec: SelectionSpec): string {
 
     if (spec.protein) {
         parts.push('protein');
+    }
+
+    if (spec.nucleic) {
+        parts.push('nucleic');
+    }
+
+    if (spec.ligand) {
+        parts.push('ligand');
+    }
+
+    if (spec.water) {
+        parts.push('water');
     }
 
     if (parts.length === 0) {
