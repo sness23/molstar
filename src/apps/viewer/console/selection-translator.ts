@@ -123,17 +123,35 @@ function parseResidueSpec(residueStr: string): ResidueSpec[] {
  * Convert SelectionSpec to MolQL query
  */
 export function selectionToQuery(spec: SelectionSpec): StructureQuery {
-    let query = MS.struct.generator.all();
+    // Start with atomGroups if we have specific filters, otherwise use all()
+    const hasFilters = spec.chains || spec.residues || spec.secondaryStructure || spec.protein;
 
-    // Apply chain filter
-    if (spec.chains && spec.chains.length > 0) {
-        const chainTests = spec.chains.map(chain =>
-            MS.core.rel.eq([MS.struct.atomProperty.macromolecular.label_asym_id(), chain])
-        );
-        const chainFilter = chainTests.length === 1
-            ? chainTests[0]
-            : MS.core.logic.or(chainTests);
-        query = MS.struct.filter.pick({ '0': query, test: chainFilter });
+    let query;
+
+    if (hasFilters) {
+        // Build tests for atomGroups
+        const tests: any[] = [];
+
+        // Apply chain filter
+        if (spec.chains && spec.chains.length > 0) {
+            const chainTests = spec.chains.map(chain =>
+                MS.core.rel.eq([chain, MS.struct.atomProperty.macromolecular.label_asym_id()])
+            );
+            const chainTest = chainTests.length === 1
+                ? chainTests[0]
+                : MS.core.logic.or(chainTests);
+            tests.push(chainTest);
+        }
+
+        // Start with atomGroups using combined tests
+        if (tests.length > 0) {
+            const combinedTest = tests.length === 1 ? tests[0] : MS.core.logic.and(tests);
+            query = MS.struct.generator.atomGroups({ 'chain-test': combinedTest });
+        } else {
+            query = MS.struct.generator.all();
+        }
+    } else {
+        query = MS.struct.generator.all();
     }
 
     // Apply residue filter

@@ -114,11 +114,26 @@ export async function executeSimpleColor(
                 return loci;
             };
 
-            // Count atoms for the message
-            const selection = query(new QueryContext(structure));
-            console.log('[executeSimpleColor] Selection for counting:', selection);
-            const loci = StructureSelection.toLociWithSourceUnits(selection);
-            console.log('[executeSimpleColor] Loci for counting:', loci);
+            // Count atoms for the message - use root structure like setStructureOverpaint does
+            let loci;
+            try {
+                console.log('[executeSimpleColor] Creating QueryContext for structure.root...');
+                console.log('[executeSimpleColor] structure.root:', structure.root);
+                const ctx = new QueryContext(structure.root);
+                console.log('[executeSimpleColor] QueryContext created:', ctx);
+                console.log('[executeSimpleColor] Executing query...');
+                const selection = query(ctx);
+                console.log('[executeSimpleColor] Selection for counting:', selection);
+                console.log('[executeSimpleColor] Converting to loci...');
+                loci = StructureSelection.toLociWithSourceUnits(selection);
+                console.log('[executeSimpleColor] Loci for counting:', loci);
+            } catch (err) {
+                console.error('[executeSimpleColor] Error during query execution:', err);
+                console.error('[executeSimpleColor] structure:', structure);
+                console.error('[executeSimpleColor] structure.root:', structure.root);
+                console.error('[executeSimpleColor] structure.units:', structure.units);
+                throw err;
+            }
 
             if (loci.kind === 'empty-loci') {
                 console.log('[executeSimpleColor] Empty loci, skipping');
