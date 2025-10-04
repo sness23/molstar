@@ -196,6 +196,78 @@
             var consoleOutput = document.getElementById('console-output');
             var consoleInput = document.getElementById('console-input');
 
+            // Command history
+            var commandHistory = [];
+            var historyIndex = -1;
+            var currentInput = '';
+
+            // Load history from localStorage
+            function loadHistory() {
+                try {
+                    var saved = localStorage.getItem('molstar-console-history');
+                    if (saved) {
+                        commandHistory = JSON.parse(saved);
+                        historyIndex = commandHistory.length;
+                    }
+                } catch (e) {
+                    console.warn('Failed to load command history:', e);
+                }
+            }
+
+            // Save history to localStorage
+            function saveHistory() {
+                try {
+                    // Keep only last 100 commands
+                    var toSave = commandHistory.slice(-100);
+                    localStorage.setItem('molstar-console-history', JSON.stringify(toSave));
+                } catch (e) {
+                    console.warn('Failed to save command history:', e);
+                }
+            }
+
+            // Add command to history
+            function addToHistory(command) {
+                if (!command || command.trim() === '') return;
+
+                // Don't add duplicate of last command
+                if (commandHistory.length > 0 && commandHistory[commandHistory.length - 1] === command) {
+                    return;
+                }
+
+                commandHistory.push(command);
+                saveHistory();
+                historyIndex = commandHistory.length;
+            }
+
+            // Navigate history
+            function navigateHistory(direction) {
+                if (commandHistory.length === 0) return;
+
+                // Save current input when starting to navigate
+                if (historyIndex === commandHistory.length) {
+                    currentInput = consoleInput.value;
+                }
+
+                if (direction === 'up') {
+                    if (historyIndex > 0) {
+                        historyIndex--;
+                        consoleInput.value = commandHistory[historyIndex];
+                    }
+                } else if (direction === 'down') {
+                    if (historyIndex < commandHistory.length - 1) {
+                        historyIndex++;
+                        consoleInput.value = commandHistory[historyIndex];
+                    } else {
+                        // Restore current input
+                        historyIndex = commandHistory.length;
+                        consoleInput.value = currentInput;
+                    }
+                }
+
+                // Move cursor to end
+                consoleInput.setSelectionRange(consoleInput.value.length, consoleInput.value.length);
+            }
+
             function addConsoleOutput(text) {
                 consoleOutput.textContent += text + '\n';
                 consoleOutput.scrollTop = consoleOutput.scrollHeight;
@@ -210,6 +282,9 @@
                 consoleDiv.classList.remove('visible');
             }
 
+            // Initialize history
+            loadHistory();
+
             // Global key handler for Enter to show console
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && !consoleDiv.classList.contains('visible')) {
@@ -222,12 +297,21 @@
                 if (e.key === 'Escape') {
                     e.preventDefault();
                     hideConsole();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    navigateHistory('up');
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    navigateHistory('down');
                 } else if (e.key === 'Enter') {
                     var command = consoleInput.value.trim();
                     if (command) {
                         addConsoleOutput('PyMOL> ' + command);
+                        addToHistory(command);
                         executeCommand(command);
                         consoleInput.value = '';
+                        historyIndex = commandHistory.length;
+                        currentInput = '';
                     }
                 }
             });
