@@ -633,3 +633,9 @@ export const PluginExtensions = {
         }
     }
 };
+
+// Export console command system
+export { parseColorCommand } from './console/command-parser';
+export { parseColorSpec, getColorByName } from './console/color-names';
+export { parseSelection, selectionToQuery, describeSelection } from './console/selection-translator';
+export { executeSimpleColor } from './console/commands/color-simple';
