@@ -44,9 +44,12 @@
                 font-family: 'Courier New', monospace;
                 font-size: 12px;
                 line-height: 1.5em;
-                display: flex;
+                display: none;
                 flex-direction: column;
                 z-index: 10000;
+            }
+            #console.visible {
+                display: flex;
             }
             #console-output {
                 flex: 1;
@@ -186,6 +189,7 @@
             });
 
             // Console functionality
+            var consoleDiv = document.getElementById('console');
             var consoleOutput = document.getElementById('console-output');
             var consoleInput = document.getElementById('console-input');
 
@@ -194,8 +198,28 @@
                 consoleOutput.scrollTop = consoleOutput.scrollHeight;
             }
 
+            function showConsole() {
+                consoleDiv.classList.add('visible');
+                consoleInput.focus();
+            }
+
+            function hideConsole() {
+                consoleDiv.classList.remove('visible');
+            }
+
+            // Global key handler for Enter to show console
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !consoleDiv.classList.contains('visible')) {
+                    e.preventDefault();
+                    showConsole();
+                }
+            });
+
             consoleInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    hideConsole();
+                } else if (e.key === 'Enter') {
                     var command = consoleInput.value.trim();
                     if (command) {
                         addConsoleOutput('PyMOL> ' + command);
