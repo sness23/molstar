@@ -241,6 +241,11 @@
                                 newViewer.loadPdb(pdbId);
                                 window.viewer = newViewer;
                             });
+                        } else if (parts[0] === 'close') {
+                            addConsoleOutput('Clearing all structures');
+                            if (window.viewer) {
+                                window.viewer.plugin.clear();
+                            }
                         } else {
                             addConsoleOutput('Error: Syntax Error');
                         }
