@@ -135,6 +135,9 @@
                 illumination: illumination,
                 resolutionMode: resolutionMode || 'auto'
             }).then(viewer => {
+                // Set black background
+                viewer.plugin.canvas3d?.setProps({ renderer: { backgroundColor: 0x000000 } });
+
                 var snapshotId = getParam('snapshot-id', '[^&]+').trim();
                 if (snapshotId) viewer.setRemoteSnapshot(snapshotId);
 
