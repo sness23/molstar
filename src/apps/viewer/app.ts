@@ -91,7 +91,7 @@ const DefaultViewerOptions = {
     extensions: ObjectKeys(ExtensionMap),
     disabledExtensions: [] as string[],
     layoutIsExpanded: true,
-    layoutShowControls: true,
+    layoutShowControls: false,
     layoutShowRemoteState: true,
     layoutControlsDisplay: 'reactive' as PluginLayoutControlsDisplay,
     layoutShowSequence: true,
