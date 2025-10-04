@@ -130,59 +130,53 @@ export function selectionToQuery(spec: SelectionSpec): StructureQuery {
 
     if (hasFilters) {
         // Build tests for atomGroups
-        const tests: any[] = [];
+        const atomGroupsParams: any = {};
 
         // Apply chain filter
         if (spec.chains && spec.chains.length > 0) {
             const chainTests = spec.chains.map(chain =>
                 MS.core.rel.eq([chain, MS.struct.atomProperty.macromolecular.label_asym_id()])
             );
-            const chainTest = chainTests.length === 1
+            atomGroupsParams['chain-test'] = chainTests.length === 1
                 ? chainTests[0]
                 : MS.core.logic.or(chainTests);
-            tests.push(chainTest);
         }
 
-        // Start with atomGroups using combined tests
-        if (tests.length > 0) {
-            const combinedTest = tests.length === 1 ? tests[0] : MS.core.logic.and(tests);
-            query = MS.struct.generator.atomGroups({ 'chain-test': combinedTest });
+        // Apply residue filter
+        if (spec.residues && spec.residues.length > 0) {
+            const residueTests: any[] = [];
+
+            for (const resSpec of spec.residues) {
+                if (resSpec.start !== undefined && resSpec.end !== undefined) {
+                    // Range
+                    residueTests.push(
+                        MS.core.rel.inRange([MS.struct.atomProperty.macromolecular.label_seq_id(), resSpec.start, resSpec.end])
+                    );
+                } else if (resSpec.individual) {
+                    // Individual residues
+                    for (const resId of resSpec.individual) {
+                        residueTests.push(
+                            MS.core.rel.eq([resId, MS.struct.atomProperty.macromolecular.label_seq_id()])
+                        );
+                    }
+                }
+            }
+
+            if (residueTests.length > 0) {
+                atomGroupsParams['residue-test'] = residueTests.length === 1
+                    ? residueTests[0]
+                    : MS.core.logic.or(residueTests);
+            }
+        }
+
+        // Start with atomGroups using the parameters
+        if (Object.keys(atomGroupsParams).length > 0) {
+            query = MS.struct.generator.atomGroups(atomGroupsParams);
         } else {
             query = MS.struct.generator.all();
         }
     } else {
         query = MS.struct.generator.all();
-    }
-
-    // Apply residue filter
-    if (spec.residues && spec.residues.length > 0) {
-        const residueTests: any[] = [];
-
-        for (const resSpec of spec.residues) {
-            if (resSpec.start !== undefined && resSpec.end !== undefined) {
-                // Range
-                residueTests.push(
-                    MS.core.logic.and([
-                        MS.core.rel.gre([MS.struct.atomProperty.macromolecular.label_seq_id(), resSpec.start]),
-                        MS.core.rel.lse([MS.struct.atomProperty.macromolecular.label_seq_id(), resSpec.end])
-                    ])
-                );
-            } else if (resSpec.individual) {
-                // Individual residues
-                for (const resId of resSpec.individual) {
-                    residueTests.push(
-                        MS.core.rel.eq([MS.struct.atomProperty.macromolecular.label_seq_id(), resId])
-                    );
-                }
-            }
-        }
-
-        if (residueTests.length > 0) {
-            const residueFilter = residueTests.length === 1
-                ? residueTests[0]
-                : MS.core.logic.or(residueTests);
-            query = MS.struct.filter.pick({ '0': query, test: residueFilter });
-        }
     }
 
     // Apply secondary structure filter
