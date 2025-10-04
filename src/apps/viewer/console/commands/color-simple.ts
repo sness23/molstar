@@ -142,7 +142,7 @@ export async function executeSimpleColor(
         console.log('[executeSimpleColor] Success! Total atoms colored:', totalAtoms);
         return {
             success: true,
-            message: `Colored ${totalAtoms} atoms in ${selectionDesc} to ${command.colorSpec}`,
+            message: '',
             atomCount: totalAtoms
         };
 
@@ -245,7 +245,7 @@ async function executeColorScheme(
 
         return {
             success: true,
-            message: `Applied ${scheme} coloring`
+            message: ''
         };
 
     } catch (error) {
