@@ -1,0 +1,300 @@
+/**
+ * Copyright (c) 2025 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author mol* contributors
+ *
+ * Selection language - PyMOL/ChimeraX-style selection syntax translator
+ */
+
+import { MolScriptBuilder as MS } from '../../mol-script/language/builder';
+import { compile } from '../../mol-script/runtime/query/compiler';
+import { StructureSelection, StructureQuery } from '../../mol-model/structure';
+import { SelectionSpec, ResidueSpec } from './types';
+
+/**
+ * Parse ChimeraX-style selection string
+ * Examples:
+ *   /A         -> chain A
+ *   /A,B       -> chains A and B
+ *   :12        -> residue 12
+ *   :12-50     -> residues 12 to 50
+ *   /A:12-50   -> chain A residues 12-50
+ *   & helix    -> helix secondary structure
+ *   #1         -> model 1
+ *   & protein  -> protein atoms
+ */
+export function parseSelection(selectionStr: string): SelectionSpec {
+    const spec: SelectionSpec = {};
+
+    // Split by & for secondary structure and other filters
+    const parts = selectionStr.split('&').map(p => p.trim());
+
+    for (const part of parts) {
+        if (!part) continue;
+
+        // Model ID (#1, #2, etc.)
+        if (part.startsWith('#')) {
+            spec.modelId = part.slice(1);
+            continue;
+        }
+
+        // Secondary structure
+        if (part === 'helix' || part === 'sheet' || part === 'coil') {
+            spec.secondaryStructure = part;
+            continue;
+        }
+
+        // Molecule type filters
+        if (part === 'protein') {
+            spec.protein = true;
+            continue;
+        }
+        if (part === 'nucleic') {
+            spec.nucleic = true;
+            continue;
+        }
+        if (part === 'ligand') {
+            spec.ligand = true;
+            continue;
+        }
+        if (part === 'water') {
+            spec.water = true;
+            continue;
+        }
+
+        // Chain and/or residue specification
+        // Format: /A:12-50 or /A or :12-50
+        const chainMatch = part.match(/\/([A-Za-z0-9,]+)/);
+        const residueMatch = part.match(/:([0-9,\-]+)/);
+
+        if (chainMatch) {
+            spec.chains = chainMatch[1].split(',').map(c => c.trim());
+        }
+
+        if (residueMatch) {
+            spec.residues = parseResidueSpec(residueMatch[1]);
+        }
+    }
+
+    return spec;
+}
+
+/**
+ * Parse residue specification like "12", "12-50", or "12,15,20-30"
+ */
+function parseResidueSpec(residueStr: string): ResidueSpec[] {
+    const specs: ResidueSpec[] = [];
+    const parts = residueStr.split(',');
+
+    for (const part of parts) {
+        if (part.includes('-')) {
+            const [start, end] = part.split('-').map(s => parseInt(s.trim(), 10));
+            if (!isNaN(start) && !isNaN(end)) {
+                specs.push({ start, end });
+            }
+        } else {
+            const num = parseInt(part.trim(), 10);
+            if (!isNaN(num)) {
+                specs.push({ individual: [num] });
+            }
+        }
+    }
+
+    return specs;
+}
+
+/**
+ * Convert SelectionSpec to MolQL query
+ */
+export function selectionToQuery(spec: SelectionSpec): StructureQuery {
+    // Start with atomGroups if we have specific filters, otherwise use all()
+    const hasFilters = spec.chains || spec.residues || spec.secondaryStructure || spec.protein || spec.nucleic || spec.ligand || spec.water;
+
+    let query;
+    const atomGroupsParams: any = {};
+
+    if (hasFilters) {
+        // Build tests for atomGroups
+
+        // Apply chain filter
+        if (spec.chains && spec.chains.length > 0) {
+            const chainTests = spec.chains.map(chain =>
+                MS.core.rel.eq([chain, MS.struct.atomProperty.macromolecular.label_asym_id()])
+            );
+            atomGroupsParams['chain-test'] = chainTests.length === 1
+                ? chainTests[0]
+                : MS.core.logic.or(chainTests);
+        }
+
+        // Apply residue filter
+        if (spec.residues && spec.residues.length > 0) {
+            const residueTests: any[] = [];
+
+            for (const resSpec of spec.residues) {
+                if (resSpec.start !== undefined && resSpec.end !== undefined) {
+                    // Range
+                    residueTests.push(
+                        MS.core.rel.inRange([MS.struct.atomProperty.macromolecular.label_seq_id(), resSpec.start, resSpec.end])
+                    );
+                } else if (resSpec.individual) {
+                    // Individual residues
+                    for (const resId of resSpec.individual) {
+                        residueTests.push(
+                            MS.core.rel.eq([resId, MS.struct.atomProperty.macromolecular.label_seq_id()])
+                        );
+                    }
+                }
+            }
+
+            if (residueTests.length > 0) {
+                atomGroupsParams['residue-test'] = residueTests.length === 1
+                    ? residueTests[0]
+                    : MS.core.logic.or(residueTests);
+            }
+        }
+
+        // Start with atomGroups using the parameters
+        if (Object.keys(atomGroupsParams).length > 0) {
+            query = MS.struct.generator.atomGroups(atomGroupsParams);
+        } else {
+            query = MS.struct.generator.all();
+        }
+    } else {
+        query = MS.struct.generator.all();
+    }
+
+    // Apply secondary structure filter
+    if (spec.secondaryStructure) {
+        const ssFlags: number[] = [];
+        if (spec.secondaryStructure === 'helix') {
+            ssFlags.push(1, 2, 3); // Helix types
+        } else if (spec.secondaryStructure === 'sheet') {
+            ssFlags.push(4, 5); // Sheet types
+        } else if (spec.secondaryStructure === 'coil') {
+            ssFlags.push(0); // Coil
+        }
+
+        if (ssFlags.length > 0) {
+            const ssTests = ssFlags.map(flag =>
+                MS.core.rel.eq([MS.struct.atomProperty.macromolecular.secondaryStructureFlags(), flag])
+            );
+            const ssFilter = ssTests.length === 1 ? ssTests[0] : MS.core.logic.or(ssTests);
+            query = MS.struct.filter.pick({ '0': query, test: ssFilter });
+        }
+    }
+
+    // Apply molecule type filters (protein, nucleic, ligand, water) to atomGroups params
+    if (hasFilters && (spec.protein || spec.nucleic || spec.ligand || spec.water)) {
+        const typeTests: any[] = [];
+
+        if (spec.protein) {
+            typeTests.push(
+                MS.core.logic.and([
+                    MS.core.rel.eq([MS.struct.atomProperty.macromolecular.entityType(), 'polymer']),
+                    MS.core.str.match([
+                        MS.core.type.regex('(polypeptide|cyclic-pseudo-peptide|peptide-like)', 'i'),
+                        MS.struct.atomProperty.macromolecular.entitySubtype()
+                    ])
+                ])
+            );
+        }
+
+        if (spec.nucleic) {
+            typeTests.push(
+                MS.core.logic.and([
+                    MS.core.rel.eq([MS.struct.atomProperty.macromolecular.entityType(), 'polymer']),
+                    MS.core.str.match([
+                        MS.core.type.regex('(nucleotide|peptide nucleic acid)', 'i'),
+                        MS.struct.atomProperty.macromolecular.entitySubtype()
+                    ])
+                ])
+            );
+        }
+
+        if (spec.ligand) {
+            typeTests.push(
+                MS.core.rel.eq([MS.struct.atomProperty.macromolecular.entityType(), 'non-polymer'])
+            );
+        }
+
+        if (spec.water) {
+            typeTests.push(
+                MS.core.rel.eq([MS.struct.atomProperty.macromolecular.entityType(), 'water'])
+            );
+        }
+
+        if (typeTests.length > 0) {
+            const typeTest = typeTests.length === 1 ? typeTests[0] : MS.core.logic.or(typeTests);
+
+            // If we already have atomGroups params, we need to rebuild the query
+            if (Object.keys(atomGroupsParams).length > 0) {
+                atomGroupsParams['entity-test'] = typeTest;
+                query = MS.struct.generator.atomGroups(atomGroupsParams);
+            } else {
+                // Just filter with entity-test
+                query = MS.struct.generator.atomGroups({ 'entity-test': typeTest });
+            }
+        }
+    }
+
+    return compile<StructureSelection>(query);
+}
+
+/**
+ * Get a human-readable description of the selection
+ */
+export function describeSelection(spec: SelectionSpec): string {
+    const parts: string[] = [];
+
+    if (spec.chains) {
+        parts.push(`chain${spec.chains.length > 1 ? 's' : ''} ${spec.chains.join(', ')}`);
+    }
+
+    if (spec.residues) {
+        const residueDesc = spec.residues.map(r => {
+            if (r.start !== undefined && r.end !== undefined) {
+                return `${r.start}-${r.end}`;
+            } else if (r.individual) {
+                return r.individual.join(',');
+            }
+            return '';
+        }).filter(s => s).join(', ');
+        parts.push(`residue${spec.residues.length > 1 ? 's' : ''} ${residueDesc}`);
+    }
+
+    if (spec.secondaryStructure) {
+        parts.push(spec.secondaryStructure);
+    }
+
+    if (spec.protein) {
+        parts.push('protein');
+    }
+
+    if (spec.nucleic) {
+        parts.push('nucleic');
+    }
+
+    if (spec.ligand) {
+        parts.push('ligand');
+    }
+
+    if (spec.water) {
+        parts.push('water');
+    }
+
+    if (parts.length === 0) {
+        return 'all atoms';
+    }
+
+    return parts.join(' ');
+}
+
+/**
+ * Selection language namespace for convenient access
+ */
+export namespace SelectionLanguage {
+    export const parse = parseSelection;
+    export const toQuery = selectionToQuery;
+    export const describe = describeSelection;
+    export type Spec = SelectionSpec;
+}
