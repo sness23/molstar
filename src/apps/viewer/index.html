@@ -226,7 +226,25 @@
                     var command = consoleInput.value.trim();
                     if (command) {
                         addConsoleOutput('PyMOL> ' + command);
-                        addConsoleOutput('Error: Syntax Error');
+
+                        // Parse command
+                        var parts = command.split(/\s+/);
+                        if (parts[0] === 'load' && parts.length >= 2) {
+                            var pdbId = parts[1];
+                            addConsoleOutput('Loading PDB entry: ' + pdbId);
+                            molstar.Viewer.create('app', {
+                                disabledExtensions: [],
+                                layoutShowControls: false,
+                                viewportShowExpand: false,
+                            }).then(function(newViewer) {
+                                newViewer.plugin.canvas3d?.setProps({ renderer: { backgroundColor: 0x000000 } });
+                                newViewer.loadPdb(pdbId);
+                                window.viewer = newViewer;
+                            });
+                        } else {
+                            addConsoleOutput('Error: Syntax Error');
+                        }
+
                         consoleInput.value = '';
                     }
                 }
