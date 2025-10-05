@@ -285,6 +285,9 @@
             // Initialize history
             loadHistory();
 
+            // Show console by default
+            showConsole();
+
             // Global key handler for Enter to show console
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && !consoleDiv.classList.contains('visible')) {
