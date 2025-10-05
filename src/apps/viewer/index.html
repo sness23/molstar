@@ -309,9 +309,16 @@
             // Show console by default
             showConsole();
 
-            // Global key handler for Enter to show console
+            // Global key handler for F2 to toggle and Enter to show console
             document.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !consoleDiv.classList.contains('visible')) {
+                if (e.key === 'F2') {
+                    e.preventDefault();
+                    if (consoleDiv.classList.contains('visible')) {
+                        hideConsole();
+                    } else {
+                        showConsole();
+                    }
+                } else if (e.key === 'Enter' && !consoleDiv.classList.contains('visible')) {
                     e.preventDefault();
                     showConsole();
                 }
