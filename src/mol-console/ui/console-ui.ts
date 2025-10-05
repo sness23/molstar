@@ -32,7 +32,6 @@ export class ConsoleUI {
     private historyIndex: number = -1;
     private currentInput: string = '';
     private outputLines: ConsoleOutputLine[] = [];
-    private globalKeyHandler: ((e: KeyboardEvent) => void) | null = null;
 
     readonly options: Required<ConsoleUIOptions>;
     readonly commandHistory: string[] = [];
@@ -140,7 +139,6 @@ export class ConsoleUI {
         parent.appendChild(this.container);
 
         this.attachEventHandlers();
-        this.attachGlobalKeyHandler();
         this.printWelcome();
     }
 
@@ -215,7 +213,6 @@ export class ConsoleUI {
      * Detach and remove the console UI
      */
     detach(): void {
-        this.detachGlobalKeyHandler();
         if (this.container && this.container.parentElement) {
             this.container.parentElement.removeChild(this.container);
             this.container = null;
@@ -263,24 +260,6 @@ export class ConsoleUI {
             }, { passive: false });
         } else {
             console.warn('No outputDiv for wheel handler');
-        }
-    }
-
-    private attachGlobalKeyHandler(): void {
-        this.globalKeyHandler = (e: KeyboardEvent) => {
-            // F2 toggles console
-            if (e.key === 'F2') {
-                e.preventDefault();
-                this.toggle();
-            }
-        };
-        document.addEventListener('keydown', this.globalKeyHandler);
-    }
-
-    private detachGlobalKeyHandler(): void {
-        if (this.globalKeyHandler) {
-            document.removeEventListener('keydown', this.globalKeyHandler);
-            this.globalKeyHandler = null;
         }
     }
 
@@ -392,7 +371,7 @@ export class ConsoleUI {
 
     private printWelcome(): void {
         this.print('Mol* Console - Type "help" for available commands', 'result');
-        this.print('Press F2 to toggle, Ctrl+L to clear, Escape to hide, Up/Down for history', 'result');
+        this.print('Press Ctrl+L to clear, Escape to hide, Up/Down for history', 'result');
         this.print('', 'result');
     }
 
