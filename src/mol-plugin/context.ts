@@ -65,6 +65,7 @@ import { setSaccharideCompIdMapType } from '../mol-model/structure/structure/car
 import { DragAndDropManager } from '../mol-plugin-state/manager/drag-and-drop';
 import { ErrorContext } from '../mol-util/error-context';
 import { PluginContainer } from './container';
+import { PluginConsole } from './console';
 
 export type PluginInitializedState =
     | { kind: 'no' }
@@ -171,6 +172,8 @@ export class PluginContext {
         substructureParent: new SubstructureParentHelper(this),
         viewportScreenshot: void 0 as ViewportScreenshotHelper | undefined
     } as const;
+
+    readonly console = new PluginConsole(this);
 
     readonly managers = {
         structure: {
