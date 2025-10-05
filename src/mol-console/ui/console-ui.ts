@@ -240,6 +240,27 @@ export class ConsoleUI {
                 this.clear();
             }
         });
+
+        // Enable mouse wheel scrolling
+        if (this.container) {
+            console.log('Attaching wheel handler to container', this.container);
+            this.container.addEventListener('wheel', (e) => {
+                console.log('Wheel event on container:', e.deltaY);
+                e.stopPropagation();
+            }, { passive: false });
+        } else {
+            console.warn('No container for wheel handler');
+        }
+
+        if (this.outputDiv) {
+            console.log('Attaching wheel handler to outputDiv', this.outputDiv);
+            this.outputDiv.addEventListener('wheel', (e) => {
+                console.log('Wheel event on outputDiv:', e.deltaY, 'scrollTop:', this.outputDiv?.scrollTop);
+                e.stopPropagation();
+            }, { passive: false });
+        } else {
+            console.warn('No outputDiv for wheel handler');
+        }
     }
 
     private async handleEnter(): Promise<void> {

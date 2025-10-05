@@ -57,9 +57,18 @@
                 padding: 10px;
                 white-space: pre-wrap;
                 word-wrap: break-word;
-                display: flex;
-                flex-direction: column;
-                justify-content: flex-end;
+            }
+            #console-output::-webkit-scrollbar {
+                width: 12px;
+            }
+            #console-output::-webkit-scrollbar-track {
+                background: #1a1a1a;
+            }
+            #console-output::-webkit-scrollbar-thumb {
+                background: #2a2a2a;
+            }
+            #console-output::-webkit-scrollbar-thumb:hover {
+                background: #333333;
             }
             #console-input-line {
                 display: flex;
@@ -285,6 +294,18 @@
             // Initialize history
             loadHistory();
 
+            // Enable mouse wheel scrolling in console output
+            consoleOutput.addEventListener('wheel', function(e) {
+                console.log('Wheel event:', e.deltaY, 'scrollTop before:', consoleOutput.scrollTop, 'scrollHeight:', consoleOutput.scrollHeight, 'clientHeight:', consoleOutput.clientHeight);
+
+                // Manually handle scrolling
+                consoleOutput.scrollTop += e.deltaY;
+
+                console.log('scrollTop after:', consoleOutput.scrollTop);
+                e.preventDefault();
+                e.stopPropagation();
+            }, { passive: false });
+
             // Show console by default
             showConsole();
 
@@ -390,6 +411,13 @@
             addConsoleOutput('PyMOL-like Console');
             addConsoleOutput('Type commands below...');
             addConsoleOutput('');
+            // Add some test lines to demonstrate scrolling
+            console.log('Adding test lines to console output');
+            for (var i = 1; i <= 20; i++) {
+                addConsoleOutput('Test line ' + i);
+            }
+            console.log('Console output content:', consoleOutput.textContent);
+            console.log('Console output scrollHeight:', consoleOutput.scrollHeight, 'clientHeight:', consoleOutput.clientHeight);
         </script>
         <!-- __MOLSTAR_PWA__ -->
         <!-- __MOLSTAR_ANALYTICS__ -->
