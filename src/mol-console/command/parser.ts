@@ -7,6 +7,7 @@
  */
 
 import { ParsedCommand } from './types';
+import { isColorName as checkColorName } from '../color/names';
 
 // Re-export ParsedCommand for convenience
 export type { ParsedCommand };
@@ -204,9 +205,7 @@ export function parseColorCommand(input: string): ColorCommand {
  * Check if a string looks like a color name (simple check)
  */
 function isColorName(str: string): boolean {
-    // Import color checker from color module
-    const { isColorName: checkColorName } = require('../color/names');
-    return checkColorName ? checkColorName(str) : false;
+    return checkColorName(str);
 }
 
 /**
