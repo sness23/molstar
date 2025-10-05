@@ -15,6 +15,7 @@ import { executeClose } from '../mol-console/commands/close';
 import { executeReset } from '../mol-console/commands/reset';
 import { executeStyle } from '../mol-console/commands/style';
 import { executeFocus } from '../mol-console/commands/focus';
+import { ConsoleUI, ConsoleUIOptions } from '../mol-console/ui/console-ui';
 
 export interface CommandResult {
     success: boolean;
@@ -27,6 +28,7 @@ export interface CommandResult {
  */
 export class PluginConsole {
     private registry: CommandRegistry;
+    private ui: ConsoleUI | null = null;
 
     constructor(private plugin: PluginContext) {
         this.registry = new CommandRegistry();
@@ -79,6 +81,48 @@ export class PluginConsole {
      */
     listCommands(): string[] {
         return this.registry.list().map(cmd => cmd.name);
+    }
+
+    /**
+     * Create and attach the visual console UI
+     */
+    createUI(parent: HTMLElement, options?: ConsoleUIOptions): ConsoleUI {
+        if (this.ui) {
+            console.warn('Console UI already created');
+            return this.ui;
+        }
+
+        this.ui = new ConsoleUI(this.plugin, options);
+        this.ui.attach(parent);
+        return this.ui;
+    }
+
+    /**
+     * Get the console UI (if created)
+     */
+    getUI(): ConsoleUI | null {
+        return this.ui;
+    }
+
+    /**
+     * Show the console UI
+     */
+    showUI(): void {
+        this.ui?.show();
+    }
+
+    /**
+     * Hide the console UI
+     */
+    hideUI(): void {
+        this.ui?.hide();
+    }
+
+    /**
+     * Toggle the console UI visibility
+     */
+    toggleUI(): void {
+        this.ui?.toggle();
     }
 
     /**

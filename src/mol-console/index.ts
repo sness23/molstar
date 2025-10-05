@@ -10,6 +10,7 @@ export * from './command';
 export * from './selection';
 export * from './color';
 export * from './commands';
+export * from './ui';
 
 // Convenience re-exports
 export { CommandRegistry } from './command/registry';
