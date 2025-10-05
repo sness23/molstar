@@ -634,8 +634,10 @@ export const PluginExtensions = {
     }
 };
 
-// Export console command system
-export { parseColorCommand } from './console/command-parser';
-export { parseColorSpec, getColorByName } from './console/color-names';
-export { parseSelection, selectionToQuery, describeSelection } from './console/selection-translator';
-export { executeSimpleColor } from './console/commands/color-simple';
+// Export console command system (now from mol-console)
+export { parseColorCommand, parseCommand } from '../../mol-console/command/parser';
+export type { ColorCommand, ParsedCommand } from '../../mol-console/command/parser';
+export { parseColorSpec, getColorByName, isColorName, isHexColor } from '../../mol-console/color/parser';
+export { parseSelection, selectionToQuery, describeSelection } from '../../mol-console/selection/language';
+export { executeSimpleColor, colorCommandToParams } from '../../mol-console/commands/color';
+export type { ColorCommandParams, ColorResult } from '../../mol-console/commands/color';

@@ -14,5 +14,9 @@ export * from './commands';
 // Convenience re-exports
 export { CommandRegistry } from './command/registry';
 export { SelectionLanguage } from './selection/language';
-export { executeSimpleColor } from './commands/color';
-export type { ColorCommandParams } from './commands/color';
+export { parseCommand, parseColorCommand } from './command/parser';
+export type { ParsedCommand, ColorCommand } from './command/parser';
+export { executeSimpleColor, colorCommandToParams } from './commands/color';
+export type { ColorCommandParams, ColorResult } from './commands/color';
+export { parseColorSpec, isColorName, isHexColor } from './color/parser';
+export { getColorByName } from './color/names';

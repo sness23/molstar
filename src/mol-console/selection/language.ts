@@ -192,8 +192,8 @@ export function selectionToQuery(spec: SelectionSpec): StructureQuery {
                 MS.core.logic.and([
                     MS.core.rel.eq([MS.struct.atomProperty.macromolecular.entityType(), 'polymer']),
                     MS.core.str.match([
-                        MS.core.type.regex('(polypeptide|cyclic-pseudo-peptide|peptide-like)', 'i'),
-                        MS.struct.atomProperty.macromolecular.entitySubtype()
+                        MS.core.type.regex(['(polypeptide|cyclic-pseudo-peptide|peptide-like)', 'i']),
+                        MS.struct.atomProperty.macromolecular.entitySubtype
                     ])
                 ])
             );
@@ -204,8 +204,8 @@ export function selectionToQuery(spec: SelectionSpec): StructureQuery {
                 MS.core.logic.and([
                     MS.core.rel.eq([MS.struct.atomProperty.macromolecular.entityType(), 'polymer']),
                     MS.core.str.match([
-                        MS.core.type.regex('(nucleotide|peptide nucleic acid)', 'i'),
-                        MS.struct.atomProperty.macromolecular.entitySubtype()
+                        MS.core.type.regex(['(nucleotide|peptide nucleic acid)', 'i']),
+                        MS.struct.atomProperty.macromolecular.entitySubtype
                     ])
                 ])
             );

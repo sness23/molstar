@@ -16,14 +16,30 @@ import { StructureSelection } from '../../mol-model/structure';
 import { QueryContext } from '../../mol-model/structure/query/context';
 import { ColorResult } from './types';
 import { ConsoleColor } from '../color/types';
+import { OrderedSet } from '../../mol-data/int';
 
 // Re-export ColorResult type
 export type { ColorResult };
 
+// Main params interface for executeSimpleColor
 export interface ColorCommandParams {
     mode: 'simple' | 'scheme';
     colorSpec: string;
     selection?: string;
+}
+
+// Helper to convert ColorCommand to ColorCommandParams
+export function colorCommandToParams(cmd: { mode: string; colorSpec?: string; selection?: string }): ColorCommandParams | null {
+    if (!cmd.colorSpec) return null;
+
+    const mode = cmd.mode === 'rainbow' || cmd.mode === 'byattribute' ? 'simple' :
+                 (cmd.mode === 'simple' || cmd.mode === 'scheme' ? cmd.mode : 'simple');
+
+    return {
+        mode: mode as 'simple' | 'scheme',
+        colorSpec: cmd.colorSpec,
+        selection: cmd.selection
+    };
 }
 
 /**
@@ -106,7 +122,7 @@ export async function executeSimpleColor(
             // Count atoms
             if (loci.kind === 'element-loci') {
                 for (const element of loci.elements) {
-                    totalAtoms += element.indices.length;
+                    totalAtoms += OrderedSet.size(element.indices);
                 }
             }
 
