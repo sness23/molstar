@@ -23,10 +23,11 @@ npm run rebuild            # Clean + full rebuild (use after dependency updates)
 ### Fast Development with esbuild
 ```bash
 npm run dev:viewer         # Watch mode for viewer only
+npm run dev:smol           # Watch mode for smol (viewer with console)
 npm run dev:apps           # Watch mode for all apps
 npm run dev:examples       # Watch mode for examples
 npm run dev:all            # Watch mode for everything
-npm run dev -- -a viewer docking-viewer -e basic-wrapper  # Watch specific apps/examples
+npm run dev -- -a viewer smol -e basic-wrapper  # Watch specific apps/examples
 ```
 
 ### Testing and Quality
@@ -96,6 +97,7 @@ The codebase follows a layered architecture where higher-level modules depend on
 
 ### Applications (`src/apps/`)
 - `viewer` - Main Mol* viewer application
+- `smol` - Mol* viewer with PyMOL-style command console
 - `docking-viewer` - Specialized docking visualization
 - `mesoscale-explorer` - Mesoscale structure explorer
 - `mvs-stories` - Molecular Visualization Stories

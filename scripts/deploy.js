@@ -76,6 +76,20 @@ function copyViewer() {
     addVersion(path.resolve(viewerDeployPath, 'sw.js'));
 }
 
+function copySmol() {
+    console.log('\n###', 'copy smol files');
+    const smolBuildPath = path.resolve(buildDir, 'smol/');
+    const smolDeployPath = path.resolve(localPath, 'smol/');
+    fse.copySync(smolBuildPath, smolDeployPath, { overwrite: true });
+    addAnalytics(path.resolve(smolDeployPath, 'index.html'));
+    addManifest(path.resolve(smolDeployPath, 'index.html'));
+    addPwa(path.resolve(smolDeployPath, 'index.html'));
+
+    const pwaDataPath = path.resolve(dataDir, 'pwa/');
+    fse.copySync(pwaDataPath, smolDeployPath, { overwrite: true });
+    addVersion(path.resolve(smolDeployPath, 'sw.js'));
+}
+
 function copyMe() {
     console.log('\n###', 'copy me files');
     const meBuildPath = path.resolve(buildDir, 'mesoscale-explorer/');
@@ -114,6 +128,7 @@ function copyDemos() {
 function copyFiles() {
     try {
         copyViewer();
+        copySmol();
         copyMe();
         copyMVSStories();
         copyDemos();

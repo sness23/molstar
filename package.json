@@ -28,6 +28,7 @@
     "dev": "node ./scripts/build.mjs",
     "dev:all": "node ./scripts/build.mjs -a -e -bt",
     "dev:viewer": "node ./scripts/build.mjs -a viewer",
+    "dev:smol": "node ./scripts/build.mjs -a smol",
     "dev:apps": "node ./scripts/build.mjs -a",
     "dev:examples": "node ./scripts/build.mjs -e",
     "dev:browser-tests": "node ./scripts/build.mjs -bt",
@@ -45,6 +46,7 @@
   "files": [
     "lib/",
     "build/viewer/",
+    "build/smol/",
     "build/mvs-stories/"
   ],
   "bin": {

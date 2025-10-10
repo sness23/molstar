@@ -1,12 +1,12 @@
-# Integration Plan: ChimeraZ Application
+# Integration Plan: smol Application
 
 ## Overview
-This plan details the full integration of the new `chimeraz` application into the Mol* project. ChimeraZ is based on the viewer app with custom additions and needs to be properly integrated into the build system, deployment pipeline, and project documentation.
+This plan details the full integration of the new `smol` application into the Mol* project. smol is based on the viewer app with custom additions and needs to be properly integrated into the build system, deployment pipeline, and project documentation.
 
 ## Current State Analysis
 
 ### Existing Structure
-- **Location**: `src/apps/chimeraz/`
+- **Location**: `src/apps/smol/`
 - **Files**:
   - `app.ts` - Main application logic (modified from viewer)
   - `index.ts` - Entry point
@@ -28,13 +28,13 @@ Based on the modified `app.ts`:
 #### 1.1 Update `scripts/build.mjs`
 **Location**: `scripts/build.mjs:14-31`
 
-**Action**: Add chimeraz to the Apps array
+**Action**: Add smol to the Apps array
 
 ```javascript
 const Apps = [
     // Apps
     { kind: 'app', name: 'viewer' },
-    { kind: 'app', name: 'chimeraz' },  // ADD THIS LINE
+    { kind: 'app', name: 'smol' },  // ADD THIS LINE
     { kind: 'app', name: 'docking-viewer' },
     { kind: 'app', name: 'mesoscale-explorer' },
     { kind: 'app', name: 'mvs-stories', globalName: 'mvsStories', filename: 'mvs-stories.js' },
@@ -42,10 +42,10 @@ const Apps = [
 ];
 ```
 
-**Why**: This registers chimeraz as a buildable application in the esbuild configuration.
+**Why**: This registers smol as a buildable application in the esbuild configuration.
 
 #### 1.2 Verify Build Output
-**Expected Output**: `build/chimeraz/` directory containing:
+**Expected Output**: `build/smol/` directory containing:
 - `molstar.js` - Bundled JavaScript
 - `molstar.css` - Compiled styles
 - `index.html` - Main page
@@ -57,25 +57,25 @@ const Apps = [
 #### 2.1 Add Build Scripts
 **Location**: `package.json:16-33`
 
-**Action**: Add chimeraz-specific development scripts
+**Action**: Add smol-specific development scripts
 
 ```json
 {
   "scripts": {
-    "dev:chimeraz": "node ./scripts/build.mjs -a chimeraz",
-    "dev:chimeraz-viewer": "node ./scripts/build.mjs -a chimeraz viewer",
-    "watch-chimeraz": "npm run dev:chimeraz"
+    "dev:smol": "node ./scripts/build.mjs -a smol",
+    "dev:smol-viewer": "node ./scripts/build.mjs -a smol viewer",
+    "watch-smol": "npm run dev:smol"
   }
 }
 ```
 
-**Why**: Provides convenient commands for developing chimeraz independently.
+**Why**: Provides convenient commands for developing smol independently.
 
 **Note**: Like `watch-viewer`, users can run with DEBUG mode:
 ```bash
-DEBUG=molstar npm run dev:chimeraz
+DEBUG=molstar npm run dev:smol
 # or
-DEBUG=molstar npm run watch-chimeraz
+DEBUG=molstar npm run watch-smol
 ```
 
 #### 2.2 Update NPM Package Files (Optional)
@@ -90,42 +90,42 @@ DEBUG=molstar npm run watch-chimeraz
 ]
 ```
 
-**Consideration**: Decide if chimeraz should be included in NPM package distribution:
-- **Include**: Add `"build/chimeraz/"` if chimeraz is meant for public distribution
-- **Exclude**: Leave as-is if chimeraz is development-only or internal use
+**Consideration**: Decide if smol should be included in NPM package distribution:
+- **Include**: Add `"build/smol/"` if smol is meant for public distribution
+- **Exclude**: Leave as-is if smol is development-only or internal use
 
 ### 3. Deployment Integration
 
 #### 3.1 Update `scripts/deploy.js`
 **Location**: `scripts/deploy.js:65-123`
 
-**Action**: Add chimeraz deployment function
+**Action**: Add smol deployment function
 
 ```javascript
-function copyChimeraz() {
-    console.log('\n###', 'copy chimeraz files');
-    const chimerazBuildPath = path.resolve(buildDir, 'chimeraz/');
-    const chimerazDeployPath = path.resolve(localPath, 'chimeraz/');
-    fse.copySync(chimerazBuildPath, chimerazDeployPath, { overwrite: true });
-    addAnalytics(path.resolve(chimerazDeployPath, 'index.html'));
-    addManifest(path.resolve(chimerazDeployPath, 'index.html'));
-    addPwa(path.resolve(chimerazDeployPath, 'index.html'));
+function copysmol() {
+    console.log('\n###', 'copy smol files');
+    const smolBuildPath = path.resolve(buildDir, 'smol/');
+    const smolDeployPath = path.resolve(localPath, 'smol/');
+    fse.copySync(smolBuildPath, smolDeployPath, { overwrite: true });
+    addAnalytics(path.resolve(smolDeployPath, 'index.html'));
+    addManifest(path.resolve(smolDeployPath, 'index.html'));
+    addPwa(path.resolve(smolDeployPath, 'index.html'));
 
     const pwaDataPath = path.resolve(dataDir, 'pwa/');
-    fse.copySync(pwaDataPath, chimerazDeployPath, { overwrite: true });
-    addVersion(path.resolve(chimerazDeployPath, 'sw.js'));
+    fse.copySync(pwaDataPath, smolDeployPath, { overwrite: true });
+    addVersion(path.resolve(smolDeployPath, 'sw.js'));
 }
 ```
 
 **Location**: `scripts/deploy.js:114-123`
 
-**Action**: Call copyChimeraz in copyFiles function
+**Action**: Call copysmol in copyFiles function
 
 ```javascript
 function copyFiles() {
     try {
         copyViewer();
-        copyChimeraz();  // ADD THIS LINE
+        copysmol();  // ADD THIS LINE
         copyMe();
         copyMVSStories();
         copyDemos();
@@ -135,24 +135,24 @@ function copyFiles() {
 }
 ```
 
-**Why**: Includes chimeraz in production deployment to molstar.github.io.
+**Why**: Includes smol in production deployment to molstar.github.io.
 
-**Decision Point**: Should chimeraz be publicly deployed? Options:
+**Decision Point**: Should smol be publicly deployed? Options:
 - **Yes**: Follow above integration (recommended for visibility)
-- **No**: Skip deployment integration, keep chimeraz development-only
-- **Separate**: Deploy to different path (e.g., `chimeraz-viewer/` or `experimental/chimeraz/`)
+- **No**: Skip deployment integration, keep smol development-only
+- **Separate**: Deploy to different path (e.g., `smol-viewer/` or `experimental/smol/`)
 
 ### 4. Documentation Updates
 
 #### 4.1 Update CLAUDE.md
 **Location**: `CLAUDE.md:98-99`
 
-**Action**: Add chimeraz to Applications list
+**Action**: Add smol to Applications list
 
 ```markdown
 ### Applications (`src/apps/`)
 - `viewer` - Main Mol* viewer application
-- `chimeraz` - ChimeraX-compatible viewer with command console
+- `smol` - ChimeraX-compatible viewer with command console
 - `docking-viewer` - Specialized docking visualization
 - `mesoscale-explorer` - Mesoscale structure explorer
 - `mvs-stories` - Molecular Visualization Stories
@@ -160,26 +160,26 @@ function copyFiles() {
 
 **Location**: `CLAUDE.md:25,93`
 
-**Action**: Add chimeraz to build command examples
+**Action**: Add smol to build command examples
 
 ```markdown
-npm run dev:chimeraz        # Watch mode for chimeraz only
-npm run dev -- -a chimeraz viewer  # Watch chimeraz and viewer
+npm run dev:smol        # Watch mode for smol only
+npm run dev -- -a smol viewer  # Watch smol and viewer
 ```
 
 #### 4.2 Update README.md
 **Location**: `README.md` (needs to be checked for relevant sections)
 
-**Action**: Add chimeraz to list of applications if applications are documented
+**Action**: Add smol to list of applications if applications are documented
 
-#### 4.3 Create ChimeraZ-Specific Documentation
+#### 4.3 Create smol-Specific Documentation
 
-**New File**: `src/apps/chimeraz/README.md`
+**New File**: `src/apps/smol/README.md`
 
 ```markdown
-# ChimeraZ Viewer
+# smol Viewer
 
-ChimeraZ is a variant of the Mol* viewer with ChimeraX-compatible command console integration.
+smol is a variant of the Mol* viewer with ChimeraX-compatible command console integration.
 
 ## Features
 
@@ -191,8 +191,8 @@ ChimeraZ is a variant of the Mol* viewer with ChimeraX-compatible command consol
 ## Development
 
 ```bash
-npm run dev:chimeraz
-# Navigate to http://localhost:1338/build/chimeraz/
+npm run dev:smol
+# Navigate to http://localhost:1338/build/smol/
 ```
 
 ## Console Commands
@@ -209,30 +209,30 @@ See [console/README.md](console/README.md) for command documentation.
 ### 5. Testing Integration
 
 #### 5.1 Add to Test Matrix
-**Consideration**: Should chimeraz have dedicated tests?
+**Consideration**: Should smol have dedicated tests?
 
 Options:
-- Use existing viewer tests (chimeraz inherits viewer functionality)
-- Add chimeraz-specific console command tests
+- Use existing viewer tests (smol inherits viewer functionality)
+- Add smol-specific console command tests
 - Add browser tests for console UI integration
 
-**Recommended**: At minimum, add smoke test to verify chimeraz builds and loads
+**Recommended**: At minimum, add smoke test to verify smol builds and loads
 
 #### 5.2 Create Browser Test (Optional)
-**New File**: `src/tests/browser/chimeraz.ts`
+**New File**: `src/tests/browser/smol.ts`
 
 ```typescript
-// Basic smoke test for chimeraz
-import { Viewer } from '../../apps/chimeraz/app';
+// Basic smoke test for smol
+import { Viewer } from '../../apps/smol/app';
 
-async function testChimeraz() {
+async function testsmol() {
     const viewer = await Viewer.create('app');
-    console.log('ChimeraZ initialized:', viewer);
+    console.log('smol initialized:', viewer);
     await viewer.loadPdb('1cbs');
     console.log('Structure loaded successfully');
 }
 
-testChimeraz().catch(console.error);
+testsmol().catch(console.error);
 ```
 
 ### 6. Git and Version Control
@@ -260,7 +260,7 @@ lib/
 ### 7. Development Workflow
 
 #### 7.1 Quick Start Guide
-Add to chimeraz README.md:
+Add to smol README.md:
 
 ```markdown
 ## Quick Start
@@ -272,14 +272,14 @@ Add to chimeraz README.md:
 
 2. Start development server:
    ```bash
-   npm run dev:chimeraz
+   npm run dev:smol
    # or with debug mode (recommended for development):
-   DEBUG=molstar npm run dev:chimeraz
+   DEBUG=molstar npm run dev:smol
    ```
 
 3. Open browser to:
    ```
-   http://localhost:1338/build/chimeraz/
+   http://localhost:1338/build/smol/
    ```
 
 4. Enable debug mode in browser console (if DEBUG=molstar was used):
@@ -300,24 +300,24 @@ Add to documentation:
 # Build for production
 npm run build:apps
 
-# Output: build/chimeraz/molstar.js (minified)
+# Output: build/smol/molstar.js (minified)
 ```
 
 ### 8. Configuration Management
 
-#### 8.1 ChimeraZ-Specific Options
-**Location**: `src/apps/chimeraz/app.ts:89-131`
+#### 8.1 smol-Specific Options
+**Location**: `src/apps/smol/app.ts:89-131`
 
 **Current Custom Options**:
 - `layoutShowControls: false` (line 94)
 
-**Consider**: Should chimeraz have additional default options?
+**Consider**: Should smol have additional default options?
 - Different color schemes?
 - Different default representations?
 - Console-specific configurations?
 
 #### 8.2 Extensibility
-**Question**: Should chimeraz support disabling console features?
+**Question**: Should smol support disabling console features?
 
 **Possible Enhancement**:
 ```typescript
@@ -331,23 +331,23 @@ const DefaultViewerOptions = {
 ### 9. Integration Checklist
 
 #### Must Have (Blocking Release)
-- [ ] Add chimeraz to `scripts/build.mjs` Apps array
-- [ ] Test build: `npm run dev:chimeraz` works
-- [ ] Verify output in `build/chimeraz/`
-- [ ] Update `CLAUDE.md` with chimeraz references
-- [ ] Create `src/apps/chimeraz/README.md`
+- [ ] Add smol to `scripts/build.mjs` Apps array
+- [ ] Test build: `npm run dev:smol` works
+- [ ] Verify output in `build/smol/`
+- [ ] Update `CLAUDE.md` with smol references
+- [ ] Create `src/apps/smol/README.md`
 
 #### Should Have (For Complete Integration)
-- [ ] Add `dev:chimeraz` script to `package.json`
+- [ ] Add `dev:smol` script to `package.json`
 - [ ] Update deployment script (if deploying publicly)
 - [ ] Document console commands
 - [ ] Add examples to documentation
 
 #### Nice to Have (Future Enhancements)
-- [ ] Browser tests for chimeraz
-- [ ] ChimeraZ-specific examples
+- [ ] Browser tests for smol
+- [ ] smol-specific examples
 - [ ] Performance comparisons with viewer
-- [ ] PWA support for chimeraz
+- [ ] PWA support for smol
 - [ ] Decide on .serena directory handling
 
 ### 10. Testing Plan
@@ -356,10 +356,10 @@ const DefaultViewerOptions = {
 ```bash
 # 1. Clean build
 npm run clean
-npm run dev:chimeraz
+npm run dev:smol
 
 # 2. Verify server starts
-# Check: http://localhost:1338/build/chimeraz/
+# Check: http://localhost:1338/build/smol/
 
 # 3. Test basic functionality
 - Load structure (1cbs)
@@ -373,11 +373,11 @@ npm run dev:chimeraz
 npm run build:apps
 
 # 2. Verify minification
-ls -lh build/chimeraz/molstar.js
+ls -lh build/smol/molstar.js
 
 # 3. Test production build
 npm run serve
-# Navigate to build/chimeraz/
+# Navigate to build/smol/
 ```
 
 #### Phase 3: Deployment (If Applicable)
@@ -385,8 +385,8 @@ npm run serve
 # 1. Local deployment test
 npm run deploy:local
 
-# 2. Verify files in deploy/data/chimeraz/
-ls -la deploy/data/chimeraz/
+# 2. Verify files in deploy/data/smol/
+ls -la deploy/data/smol/
 
 # 3. Remote deployment (when ready)
 npm run deploy:remote
@@ -396,13 +396,13 @@ npm run deploy:remote
 
 ### Step 1: Core Integration (1-2 hours)
 1. Update `scripts/build.mjs` - Add to Apps array
-2. Add package.json scripts (`dev:chimeraz`, `watch-chimeraz`)
-3. Test build: `npm run dev:chimeraz`
-4. Test debug build: `DEBUG=molstar npm run dev:chimeraz`
+2. Add package.json scripts (`dev:smol`, `watch-smol`)
+3. Test build: `npm run dev:smol`
+4. Test debug build: `DEBUG=molstar npm run dev:smol`
 5. Verify functionality in browser
 
 ### Step 2: Documentation (30 min - 1 hour)
-1. Create `src/apps/chimeraz/README.md`
+1. Create `src/apps/smol/README.md`
 2. Update `CLAUDE.md`
 3. Document console commands
 
@@ -420,30 +420,30 @@ npm run deploy:remote
 ## Risks and Considerations
 
 ### Risk 1: Console Module Dependency
-**Issue**: ChimeraZ depends on `mol-console` module
-**Mitigation**: Verify `mol-console` is properly built before chimeraz
+**Issue**: smol depends on `mol-console` module
+**Mitigation**: Verify `mol-console` is properly built before smol
 
 ### Risk 2: Breaking Changes
-**Issue**: Changes to viewer app might break chimeraz
+**Issue**: Changes to viewer app might break smol
 **Mitigation**:
-- Keep chimeraz in sync with viewer
+- Keep smol in sync with viewer
 - Document deviations clearly
 - Consider automated diffing
 
 ### Risk 3: Deployment Conflicts
-**Issue**: ChimeraZ URL might conflict with existing paths
+**Issue**: smol URL might conflict with existing paths
 **Mitigation**:
-- Use unique path: `/chimeraz/` not `/viewer/`
+- Use unique path: `/smol/` not `/viewer/`
 - Update analytics tags appropriately
 
 ### Risk 4: Build System Changes
-**Issue**: esbuild config changes might affect chimeraz differently
-**Mitigation**: Test both viewer and chimeraz after build changes
+**Issue**: esbuild config changes might affect smol differently
+**Mitigation**: Test both viewer and smol after build changes
 
 ## Success Criteria
 
 ### Minimum Viable Integration
-- ✅ ChimeraZ builds successfully with `npm run dev:chimeraz`
+- ✅ smol builds successfully with `npm run dev:smol`
 - ✅ Application loads in browser
 - ✅ Console commands work
 - ✅ No console errors
@@ -458,7 +458,7 @@ npm run deploy:remote
 
 ### Excellent Integration
 - ✅ All above criteria met
-- ✅ Browser tests for chimeraz
+- ✅ Browser tests for smol
 - ✅ Examples and tutorials
 - ✅ Performance benchmarks
 - ✅ PWA support
@@ -476,11 +476,11 @@ After reviewing this plan:
 
 ## Questions to Answer
 
-1. **Deployment**: Should chimeraz be publicly deployed to molstar.github.io?
-2. **NPM Package**: Should chimeraz be included in npm distribution?
+1. **Deployment**: Should smol be publicly deployed to molstar.github.io?
+2. **NPM Package**: Should smol be included in npm distribution?
 3. **Console Module**: Is `mol-console` complete and stable?
-4. **Naming**: Is "chimeraz" the final name or will it change?
-5. **Audience**: Who is the target user for chimeraz vs standard viewer?
+4. **Naming**: Is "smol" the final name or will it change?
+5. **Audience**: Who is the target user for smol vs standard viewer?
 6. **.serena Directory**: What is this for? Should it be tracked?
 
 ---
