@@ -1,0 +1,10 @@
+{
+  "allowedTools": [
+    "Edit",
+    "Read",
+    "Write",
+    "Bash(*)",
+    "mcp__serena__*"
+  ]
+}
+

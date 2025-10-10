@@ -150,6 +150,9 @@
                 illumination: illumination,
                 resolutionMode: resolutionMode || 'auto'
             }).then(viewer => {
+                // Store viewer globally for console commands
+                window.viewer = viewer;
+
                 // Set black background
                 viewer.plugin.canvas3d?.setProps({ renderer: { backgroundColor: 0x000000 } });
 
@@ -296,12 +299,9 @@
 
             // Enable mouse wheel scrolling in console output
             consoleOutput.addEventListener('wheel', function(e) {
-                console.log('Wheel event:', e.deltaY, 'scrollTop before:', consoleOutput.scrollTop, 'scrollHeight:', consoleOutput.scrollHeight, 'clientHeight:', consoleOutput.clientHeight);
-
                 // Manually handle scrolling
                 consoleOutput.scrollTop += e.deltaY;
 
-                console.log('scrollTop after:', consoleOutput.scrollTop);
                 e.preventDefault();
                 e.stopPropagation();
             }, { passive: false });
@@ -397,16 +397,14 @@
 
             // Load PDB command
             function executeLoadCommand(pdbId) {
+                if (!window.viewer) {
+                    addConsoleOutput('Error: Viewer not initialized');
+                    return;
+                }
                 addConsoleOutput('Loading PDB entry: ' + pdbId);
-                molstar.Viewer.create('app', {
-                    disabledExtensions: [],
-                    layoutShowControls: false,
-                    viewportShowExpand: false,
-                }).then(function(newViewer) {
-                    newViewer.plugin.canvas3d?.setProps({ renderer: { backgroundColor: 0x000000 } });
-                    newViewer.loadPdb(pdbId);
-                    window.viewer = newViewer;
-                });
+                // Clear existing structures and load new one
+                window.viewer.plugin.clear();
+                window.viewer.loadPdb(pdbId);
             }
 
             // Close/clear command
