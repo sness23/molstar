@@ -40,6 +40,7 @@ export class PluginConsole {
      */
     async execute(commandString: string): Promise<CommandResult> {
         const trimmed = commandString.trim();
+        console.log('[CONSOLE] Execute called with:', trimmed);
         if (!trimmed) {
             return {
                 success: false,
@@ -49,6 +50,9 @@ export class PluginConsole {
 
         // Get the command name
         const commandName = trimmed.split(/\s+/)[0].toLowerCase();
+        console.log('[CONSOLE] Command name:', commandName);
+        console.log('[CONSOLE] Registry has command?', this.registry.has(commandName));
+        console.log('[CONSOLE] Available commands:', this.registry.list().map(c => c.name));
 
         // Check if command is registered
         if (this.registry.has(commandName)) {
@@ -207,10 +211,15 @@ export class PluginConsole {
             category: 'structure',
             description: 'Change representation style',
             parse: (args: string[]) => {
+                console.log('[STYLE PARSER] Called with args:', args);
                 if (args.length < 1) {
+                    console.log('[STYLE PARSER] No args, returning null');
                     return null;
                 }
-                return { style: args[0].toLowerCase() };
+                const style = args[0].toLowerCase();
+                const selection = args.slice(1).join(' ') || 'all';
+                console.log('[STYLE PARSER] Parsed - style:', style, 'selection:', selection);
+                return { style, selection };
             },
             execute: executeStyle
         });
@@ -221,12 +230,8 @@ export class PluginConsole {
             category: 'camera',
             description: 'Focus camera on selection',
             parse: (args: string[]) => {
-                if (args.length < 2) {
-                    return null;
-                }
                 return {
-                    type: args[0].toLowerCase(),
-                    target: args[1]
+                    selection: args.join(' ') || 'all'
                 };
             },
             execute: executeFocus

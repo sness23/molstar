@@ -7,11 +7,13 @@
  */
 
 import { PluginContext } from '../../mol-plugin/context';
-import { PluginCommands } from '../../mol-plugin/commands';
+import { parseSelection, selectionToQuery } from '../selection/language';
+import { QueryContext } from '../../mol-model/structure/query/context';
+import { StructureSelection } from '../../mol-model/structure';
+import { Loci } from '../../mol-model/loci';
 
 export interface FocusCommandParams {
-    type: string;
-    target: string;
+    selection?: string;
 }
 
 export interface FocusResult {
@@ -21,25 +23,71 @@ export interface FocusResult {
 
 /**
  * Execute focus command to focus camera on selection
- *
- * Note: Current implementation is simplified - just resets camera with animation
- * TODO: Implement proper selection-based focusing using structure queries
  */
 export async function executeFocus(
     plugin: PluginContext,
     params: FocusCommandParams
 ): Promise<FocusResult> {
-    const { type, target } = params;
+    const selection = params.selection || 'all';
 
     try {
-        // Simplified: just reset camera with animation
-        // TODO: Build proper selection query from type and target
-        // TODO: Focus on the selected loci using camera manager
-        await PluginCommands.Camera.Reset(plugin, { durationMs: 1000 });
+        // Get structure hierarchy
+        const structureHierarchy = plugin.managers.structure.hierarchy.current;
+
+        if (structureHierarchy.structures.length === 0) {
+            return {
+                success: false,
+                message: 'No structure loaded'
+            };
+        }
+
+        // Parse selection
+        const selectionSpec = parseSelection(selection);
+        const query = selectionToQuery(selectionSpec);
+
+        // Collect all loci from all structures
+        const allLoci: Loci[] = [];
+
+        for (const structureRef of structureHierarchy.structures) {
+            const structure = structureRef.cell.obj?.data;
+            if (!structure) continue;
+
+            try {
+                // Build loci from selection
+                const ctx = new QueryContext(structure.root);
+                const structureSelection = query(ctx);
+                const loci = StructureSelection.toLociWithSourceUnits(structureSelection);
+
+                if (loci.kind === 'element-loci' && loci.elements.length > 0) {
+                    allLoci.push(loci);
+                }
+            } catch (err) {
+                // Skip structures where query fails
+                continue;
+            }
+        }
+
+        if (allLoci.length === 0) {
+            return {
+                success: false,
+                message: `No atoms found matching selection: ${selection}`
+            };
+        }
+
+        // Focus on the combined loci
+        if (allLoci.length === 1) {
+            await plugin.managers.camera.focusLoci(allLoci[0]);
+        } else {
+            // For multiple loci, focus on all of them
+            await plugin.managers.camera.focusLoci(allLoci[0]);
+            for (let i = 1; i < allLoci.length; i++) {
+                await plugin.managers.camera.focusLoci(allLoci[i], { extraRadius: 0 });
+            }
+        }
 
         return {
             success: true,
-            message: `Focused on ${type} ${target} (simplified reset)`
+            message: selection === 'all' ? 'Focused on structure' : `Focused on ${selection}`
         };
     } catch (error) {
         return {

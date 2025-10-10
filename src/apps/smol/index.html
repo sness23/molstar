@@ -337,7 +337,7 @@
                 } else if (e.key === 'Enter') {
                     var command = consoleInput.value.trim();
                     if (command) {
-                        addConsoleOutput('PyMOL> ' + command);
+                        addConsoleOutput('smol> ' + command);
                         addToHistory(command);
                         executeCommand(command);
                         consoleInput.value = '';
@@ -349,6 +349,26 @@
 
             // Execute a console command
             function executeCommand(command) {
+                // Use the plugin console if available
+                if (window.viewer && window.viewer.plugin && window.viewer.plugin.console) {
+                    window.viewer.plugin.console.execute(command).then(function(result) {
+                        if (result.success) {
+                            if (result.message) {
+                                addConsoleOutput(result.message);
+                            }
+                            if (result.data) {
+                                addConsoleOutput(JSON.stringify(result.data, null, 2));
+                            }
+                        } else {
+                            addConsoleOutput('Error: ' + result.message);
+                        }
+                    }).catch(function(error) {
+                        addConsoleOutput('Exception: ' + (error.message || String(error)));
+                    });
+                    return;
+                }
+
+                // Fallback to legacy handlers if plugin console not available
                 var parts = command.split(/\s+/);
                 var cmd = parts[0].toLowerCase();
 
