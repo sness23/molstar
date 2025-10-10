@@ -641,3 +641,5 @@ export { parseColorSpec, getColorByName, isColorName, isHexColor } from '../../m
 export { parseSelection, selectionToQuery, describeSelection } from '../../mol-console/selection/language';
 export { executeSimpleColor, colorCommandToParams } from '../../mol-console/commands/color';
 export type { ColorCommandParams, ColorResult } from '../../mol-console/commands/color';
+export { executeHelp } from '../../mol-console/commands/help';
+export type { HelpResult } from '../../mol-console/commands/help';

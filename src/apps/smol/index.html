@@ -352,14 +352,26 @@
                 var parts = command.split(/\s+/);
                 var cmd = parts[0].toLowerCase();
 
-                if (cmd === 'load' && parts.length >= 2) {
+                if (cmd === 'help') {
+                    executeHelpCommand(parts.slice(1).join(' '));
+                } else if (cmd === 'load' && parts.length >= 2) {
                     executeLoadCommand(parts[1]);
                 } else if (cmd === 'close') {
                     executeCloseCommand();
                 } else if (cmd === 'color') {
                     executeColorCommand(command);
                 } else {
-                    addConsoleOutput('Error: Unknown command');
+                    addConsoleOutput('Error: Unknown command. Type \'help\' for available commands.');
+                }
+            }
+
+            // Help command
+            function executeHelpCommand(commandName) {
+                var result = molstar.executeHelp(window.viewer ? window.viewer.plugin : null, commandName);
+                if (result.success && result.helpText) {
+                    addConsoleOutput(result.helpText);
+                } else if (result.message) {
+                    addConsoleOutput(result.message);
                 }
             }
 
