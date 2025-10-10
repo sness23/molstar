@@ -72,30 +72,35 @@ export async function executeStyle(
             };
         }
 
-        // Get all structure representations
-        const representationQuery = StateSelection.Generators.rootsOfType(PSO.Molecule.Structure.Representation3D);
-        const representations = Array.from(plugin.state.data.select(representationQuery));
+        // For each structure, remove old representations and add new ones
+        let updatedCount = 0;
 
-        if (!representations || representations.length === 0) {
-            return {
-                success: false,
-                message: 'No structure representations found. Load a structure first.'
-            };
+        for (const structureRef of structureHierarchy.structures) {
+            // Go through each component
+            for (const component of structureRef.components) {
+                // Remove all existing representations
+                const builder = plugin.state.data.build();
+                for (const repr of component.representations) {
+                    builder.delete(repr.cell.transform.ref);
+                }
+                await builder.commit();
+
+                // Add new representation with the desired type
+                await plugin.builders.structure.representation.addRepresentation(
+                    component.cell,
+                    {
+                        type: molstarType as any,
+                    }
+                );
+                updatedCount++;
+            }
         }
 
-        // Update representation type for each representation
-        for (const repr of representations) {
-            if (!repr || !repr.transform) continue;
-
-            const update = plugin.state.data.build().to(repr.transform.ref);
-
-            // Update the representation type
-            update.update({
-                ...repr.transform.params,
-                type: { name: molstarType }
-            });
-
-            await update.commit();
+        if (updatedCount === 0) {
+            return {
+                success: false,
+                message: 'No structure components found. Try loading a structure first.'
+            };
         }
 
         return {

@@ -15,6 +15,7 @@ import { executeClose } from '../mol-console/commands/close';
 import { executeReset } from '../mol-console/commands/reset';
 import { executeStyle } from '../mol-console/commands/style';
 import { executeFocus } from '../mol-console/commands/focus';
+import { executeHelp } from '../mol-console/commands/help';
 import { ConsoleUI, ConsoleUIOptions } from '../mol-console/ui/console-ui';
 
 export interface CommandResult {
@@ -235,6 +236,25 @@ export class PluginConsole {
                 };
             },
             execute: executeFocus
+        });
+
+        // Register help command
+        this.registry.register({
+            name: 'help',
+            category: 'general',
+            description: 'Show help for commands',
+            parse: (args: string[]) => {
+                return {
+                    command: args.join(' ')
+                };
+            },
+            execute: async (plugin: PluginContext, params: { command?: string }): Promise<CommandResult> => {
+                const result = executeHelp(plugin, params.command);
+                return {
+                    success: result.success,
+                    message: result.helpText || result.message
+                };
+            }
         });
     }
 }
